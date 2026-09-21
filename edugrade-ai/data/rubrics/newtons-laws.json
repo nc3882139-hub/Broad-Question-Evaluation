@@ -1,0 +1,34 @@
+{
+  "id": "newtons-laws",
+  "question": "Explain Newton's laws of motion.",
+  "max_marks": 5,
+  "reference_answer": "Newton's first law states that an object remains at rest or in uniform motion unless acted upon by an external force (inertia). The second law states that force equals mass times acceleration (F = ma). The third law states that every action has an equal and opposite reaction. Examples include a ball at rest, accelerating a trolley, and rocket propulsion.",
+  "source": "seed",
+  "concepts": [
+    {
+      "concept": "First law: inertia — object stays at rest or uniform motion without external force",
+      "weight": 1,
+      "optional": false
+    },
+    {
+      "concept": "Second law: force equals mass times acceleration (F = ma)",
+      "weight": 1,
+      "optional": false
+    },
+    {
+      "concept": "Third law: every action has an equal and opposite reaction",
+      "weight": 1,
+      "optional": false
+    },
+    {
+      "concept": "Real-world examples or applications of the laws",
+      "weight": 1,
+      "optional": false
+    },
+    {
+      "concept": "Relationship between force, mass and acceleration",
+      "weight": 1,
+      "optional": false
+    }
+  ]
+}

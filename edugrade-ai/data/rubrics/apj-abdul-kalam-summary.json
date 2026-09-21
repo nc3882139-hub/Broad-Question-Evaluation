@@ -1,0 +1,34 @@
+{
+  "id": "apj-abdul-kalam-summary",
+  "question": "Write a short summary on APJ Abdul Kalam.",
+  "max_marks": 5,
+  "reference_answer": "Dr. A. P. J. Abdul Kalam was an Indian aerospace scientist who served as the 11th President of India. He worked with organizations such as ISRO and DRDO and played an important role in India's missile and space programmes. He was popularly known as the Missile Man of India and inspired many young people through his work and writings.",
+  "source": "seed",
+  "concepts": [
+    {
+      "concept": "Indian aerospace scientist",
+      "weight": 1,
+      "optional": false
+    },
+    {
+      "concept": "11th President of India",
+      "weight": 1,
+      "optional": false
+    },
+    {
+      "concept": "ISRO / DRDO contribution to missile and space programmes",
+      "weight": 1,
+      "optional": false
+    },
+    {
+      "concept": "Missile Man of India",
+      "weight": 1,
+      "optional": false
+    },
+    {
+      "concept": "Inspiration / contribution to education and youth",
+      "weight": 1,
+      "optional": false
+    }
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "id": "short-note-on-democracy",
+  "question": "Write a short note on democracy.",
+  "max_marks": 5,
+  "reference_answer": "Democracy is a system of government in which power lies with the people, who elect their representatives through free and fair elections. It guarantees fundamental rights and liberties, operates under the rule of law with accountable leaders, and follows majority rule while protecting the rights of minorities.",
+  "source": "seed",
+  "concepts": [
+    {
+      "concept": "Government by the people through elected representatives",
+      "weight": 1,
+      "optional": false
+    },
+    {
+      "concept": "Free and fair elections",
+      "weight": 1,
+      "optional": false
+    },
+    {
+      "concept": "Fundamental rights and liberties of citizens",
+      "weight": 1,
+      "optional": false
+    },
+    {
+      "concept": "Rule of law and accountable government",
+      "weight": 1,
+      "optional": false
+    },
+    {
+      "concept": "Majority rule with protection of minority rights",
+      "weight": 1,
+      "optional": false
+    }
+  ]
+}

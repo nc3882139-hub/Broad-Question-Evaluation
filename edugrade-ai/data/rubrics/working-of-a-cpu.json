@@ -1,0 +1,34 @@
+{
+  "id": "working-of-a-cpu",
+  "question": "Describe the working of a CPU.",
+  "max_marks": 5,
+  "reference_answer": "The CPU (Central Processing Unit) is the brain of the computer that executes instructions using the fetch-decode-execute cycle. The Control Unit directs the flow of data and coordinates components, while the Arithmetic Logic Unit performs arithmetic and logical operations. Registers and cache provide fast temporary storage for data and instructions being processed.",
+  "source": "seed",
+  "concepts": [
+    {
+      "concept": "CPU is the central processing unit / brain of the computer",
+      "weight": 1,
+      "optional": false
+    },
+    {
+      "concept": "Fetch-decode-execute cycle",
+      "weight": 1,
+      "optional": false
+    },
+    {
+      "concept": "ALU performs arithmetic and logic operations",
+      "weight": 1,
+      "optional": false
+    },
+    {
+      "concept": "Control Unit directs and coordinates operations",
+      "weight": 1,
+      "optional": false
+    },
+    {
+      "concept": "Registers / cache provide fast temporary storage",
+      "weight": 1,
+      "optional": false
+    }
+  ]
+}

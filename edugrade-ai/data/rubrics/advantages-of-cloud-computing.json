@@ -1,0 +1,34 @@
+{
+  "id": "advantages-of-cloud-computing",
+  "question": "What are the advantages of cloud computing?",
+  "max_marks": 5,
+  "reference_answer": "Cloud computing delivers computing services such as servers, storage and applications on demand over the internet with pay-as-you-go pricing. It offers scalability and elasticity, high accessibility from anywhere, reduced infrastructure and maintenance cost, and service models such as IaaS, PaaS and SaaS deployed on public, private or hybrid clouds.",
+  "source": "seed",
+  "concepts": [
+    {
+      "concept": "On-demand delivery of computing services over the internet",
+      "weight": 1,
+      "optional": false
+    },
+    {
+      "concept": "Scalability and elasticity of resources",
+      "weight": 1,
+      "optional": false
+    },
+    {
+      "concept": "Cost efficiency — pay as you go, less infrastructure",
+      "weight": 1,
+      "optional": false
+    },
+    {
+      "concept": "Service models IaaS, PaaS, SaaS",
+      "weight": 1,
+      "optional": false
+    },
+    {
+      "concept": "Accessibility from anywhere / easy maintenance",
+      "weight": 1,
+      "optional": false
+    }
+  ]
+}

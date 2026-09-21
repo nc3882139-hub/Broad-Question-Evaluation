@@ -1,0 +1,34 @@
+{
+  "id": "causes-of-climate-change",
+  "question": "Explain the causes of climate change.",
+  "max_marks": 5,
+  "reference_answer": "Climate change is driven mainly by greenhouse gases such as carbon dioxide and methane, which trap heat in the atmosphere. The largest human cause is the burning of fossil fuels for energy, industry and transport. Deforestation reduces the Earth's capacity to absorb carbon dioxide, and industrial agriculture adds further emissions. The result is global warming, rising sea levels and extreme weather events.",
+  "source": "seed",
+  "concepts": [
+    {
+      "concept": "Greenhouse gases (CO2, methane) trap heat in the atmosphere",
+      "weight": 1,
+      "optional": false
+    },
+    {
+      "concept": "Burning of fossil fuels is the main human cause",
+      "weight": 1,
+      "optional": false
+    },
+    {
+      "concept": "Deforestation reduces CO2 absorption",
+      "weight": 1,
+      "optional": false
+    },
+    {
+      "concept": "Industry, transport and agriculture emissions",
+      "weight": 1,
+      "optional": false
+    },
+    {
+      "concept": "Effects: global warming, sea level rise, extreme weather",
+      "weight": 1,
+      "optional": false
+    }
+  ]
+}

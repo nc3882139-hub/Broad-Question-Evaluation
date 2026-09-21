@@ -1,0 +1,24 @@
+fastapi>=0.110
+uvicorn[standard]>=0.29
+python-multipart>=0.0.9
+pydantic>=2.6
+sqlalchemy>=2.0
+python-dotenv>=1.0
+numpy>=1.26
+Pillow>=10.2
+PyMuPDF>=1.24
+pytesseract>=0.3.10
+# Optional model/training dependencies; hashing/lexicon backends work offline.
+sentence-transformers>=2.7
+torch>=2.2
+transformers>=4.40
+# Optional research/training dependency:
+scikit-learn>=1.4
+# Optional PDF export dependency; HTML fallback works without it.
+reportlab>=4.1
+httpx>=0.27
+pytest>=8.0
+# Optional OCR engine (uncomment for handwriting-heavy sheets):
+# easyocr>=1.7
+# Optional dataset loading for research training scripts:
+# datasets>=2.20

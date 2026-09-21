@@ -1,0 +1,34 @@
+{
+  "id": "explain-photosynthesis",
+  "question": "Explain photosynthesis.",
+  "max_marks": 5,
+  "reference_answer": "Photosynthesis is the process by which green plants, algae and some bacteria convert light energy into chemical energy. Plants take in carbon dioxide and water and, using sunlight absorbed by chlorophyll in the chloroplasts, produce glucose (food) and release oxygen. This process is essential because it provides food and oxygen for almost all life on Earth.",
+  "source": "seed",
+  "concepts": [
+    {
+      "concept": "Process converting light energy into chemical energy",
+      "weight": 1,
+      "optional": false
+    },
+    {
+      "concept": "Uses sunlight, water and carbon dioxide",
+      "weight": 1,
+      "optional": false
+    },
+    {
+      "concept": "Produces glucose (food) and releases oxygen",
+      "weight": 1,
+      "optional": false
+    },
+    {
+      "concept": "Takes place in chloroplasts using chlorophyll",
+      "weight": 1,
+      "optional": false
+    },
+    {
+      "concept": "Importance: food and oxygen for life on Earth",
+      "weight": 1,
+      "optional": false
+    }
+  ]
+}

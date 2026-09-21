@@ -1,0 +1,15 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body { @apply bg-[#070b14] text-slate-200 antialiased font-sans; }
+.app-bg {
+  background:
+    radial-gradient(1100px 550px at 85% -10%, rgba(124, 58, 237, 0.16), transparent 60%),
+    radial-gradient(900px 500px at -10% 35%, rgba(37, 99, 235, 0.13), transparent 55%),
+    #070b14;
+}
+.glass { @apply border border-white/10 bg-white/[0.04] backdrop-blur-xl; }
+.app-bg { @apply min-h-screen; }
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 8px; }

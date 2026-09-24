@@ -32,7 +32,12 @@ def find_rubric(question_text, threshold=0.72):
         score = SequenceMatcher(None, qn, _norm(r.get("question", ""))).ratio()
         if score > best_score:
             best, best_score = r, score
-    return (best, best_score) if best and best_score >= threshold else (None, best_score)
+    if best and best_score >= threshold:
+        best = dict(best)
+        best.setdefault("approval_status", "approved" if best.get("source") in ("seed", "teacher") else "draft")
+        best.setdefault("version", 1)
+        return best, best_score
+    return None, best_score
 
 
 def _compress(sentence, max_tokens=9):
@@ -77,6 +82,8 @@ def suggest_concepts(reference_answer, max_marks=5, question=""):
 def save_rubric(rubric: dict, db=None):
     rid = rubric.get("id") or _slug(rubric["question"])
     rubric["id"] = rid
+    rubric.setdefault("version", 1)
+    rubric.setdefault("approval_status", "draft" if rubric.get("source") == "auto" else "approved")
     settings.RUBRIC_DIR.mkdir(parents=True, exist_ok=True)
     (settings.RUBRIC_DIR / f"{rid}.json").write_text(
         json.dumps(rubric, indent=2, ensure_ascii=False), encoding="utf-8")

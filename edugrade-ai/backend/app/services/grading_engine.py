@@ -132,6 +132,14 @@ def grade_answer(question, student_answer, rubric, method="hybrid"):
     answer = (student_answer or "").strip()
     concepts = rubric.get("concepts") or []
     max_marks = float(rubric.get("max_marks") if rubric.get("max_marks") is not None else 5)
+    if max_marks <= 0:
+        raise ValueError("max_marks must be greater than zero")
+    if any(float(c.get("weight", 0)) < 0 for c in concepts):
+        raise ValueError("concept weights cannot be negative")
+    if concepts and sum(float(c.get("weight", 0)) for c in concepts) <= 0:
+        raise ValueError("concept weights must contain a positive value")
+    if concepts and sum(float(c.get("weight", 0)) for c in concepts) > max_marks + 1e-6:
+        raise ValueError("concept weights cannot exceed max_marks")
     reference = (rubric.get("reference_answer") or "").strip()
 
     sentences = split_sentences(answer) if answer else []

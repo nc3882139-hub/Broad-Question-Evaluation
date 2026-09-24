@@ -79,6 +79,7 @@ export default function Evaluate({ onEvaluated }) {
               <Badge tone="blue">{meta.pages} page(s)</Badge>
               <Badge tone="green">Uploaded ✓</Badge>
               <Badge tone="amber">OCR / parsing queued</Badge>
+              {meta.warnings?.map((warning) => <Badge key={warning} tone="rose">{warning}</Badge>)}
             </div>)}
           <div className="flex flex-wrap items-center gap-3 pt-2 border-t border-white/10">
             <Button variant="outline" size="sm" onClick={() => setTextMode(!textMode)}>

@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.models.database import get_db
 from app.services import rubric_service
+from app.security import current_user, require_roles
 
 router = APIRouter(prefix="/api", tags=["rubrics"])
 
@@ -31,33 +32,34 @@ class SuggestIn(BaseModel):
 
 
 @router.post("/rubric/suggest")
-def suggest(payload: SuggestIn):
+def suggest(payload: SuggestIn, user=Depends(require_roles("teacher", "admin"))):
     return rubric_service.suggest_concepts(payload.reference_answer, payload.max_marks,
                                            question=payload.question)
 
 
 @router.post("/rubric")
-def create_rubric(payload: RubricIn, db: Session = Depends(get_db)):
+def create_rubric(payload: RubricIn, db: Session = Depends(get_db), user=Depends(require_roles("teacher", "admin"))):
     concepts = payload.concepts
     if not concepts and payload.auto_suggest and payload.reference_answer.strip():
         concepts = [ConceptIn(**c) for c in rubric_service.suggest_concepts(
             payload.reference_answer, payload.max_marks, question=payload.question)["concepts"]]
     if not concepts:
-        concepts = [ConceptIn(concept=payload.question, weight=payload.max_marks)]
+        raise HTTPException(422, "An approved rubric must define concepts or provide a reference answer")
     rubric = rubric_service.save_rubric({
         "question": payload.question, "max_marks": payload.max_marks,
         "reference_answer": payload.reference_answer, "source": "teacher",
-        "concepts": [c.model_dump() if hasattr(c, "model_dump") else c.dict() for c in concepts]}, db)
+        "concepts": [c.model_dump() if hasattr(c, "model_dump") else c.dict() for c in concepts],
+        "approval_status": "approved", "owner_id": user["id"]}, db)
     return rubric
 
 
 @router.get("/rubrics")
-def list_rubrics(db: Session = Depends(get_db)):
+def list_rubrics(db: Session = Depends(get_db), user=Depends(current_user)):
     return rubric_service.list_rubrics(db)
 
 
 @router.get("/rubric/{rubric_id}")
-def get_rubric(rubric_id: str, db: Session = Depends(get_db)):
+def get_rubric(rubric_id: str, db: Session = Depends(get_db), user=Depends(current_user)):
     r = rubric_service.get_rubric(db, rubric_id)
     if not r:
         raise HTTPException(404, "Rubric not found")

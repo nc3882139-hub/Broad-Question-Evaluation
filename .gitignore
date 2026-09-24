@@ -1,0 +1,9 @@
+node_modules/
+**/__pycache__/
+*.pyc
+.env
+*.db
+edugrade-ai/data/raw/uploads/
+edugrade-ai/data/processed/
+edugrade-ai/models/*
+!edugrade-ai/models/.gitkeep

@@ -33,3 +33,13 @@ def test_irrelevant_flagged():
     g = grade_answer(RUBRIC["question"],
                      "Cricket is a popular sport played in many countries.", RUBRIC)
     assert any(i["type"] in ("off_topic", "irrelevant_content") for i in g["issues"])
+
+
+def test_invalid_grading_configuration_is_rejected():
+    import pytest
+    with pytest.raises(ValueError, match="max_marks"):
+        grade_answer("Q", "answer", {"max_marks": 0, "concepts": []})
+    with pytest.raises(ValueError, match="negative"):
+        grade_answer("Q", "answer", {"max_marks": 5, "concepts": [{"concept": "x", "weight": -1}]})
+    with pytest.raises(ValueError, match="exceed"):
+        grade_answer("Q", "answer", {"max_marks": 5, "concepts": [{"concept": "x", "weight": 6}]})

@@ -19,7 +19,7 @@ def _fuzzy(a, b):
 
 
 def resolve_rubric(question, overrides):
-    """Priority: teacher override -> rubric library -> auto-suggested draft (flagged)."""
+    """Return a rubric plus provenance; missing rubrics remain review-only."""
     for o in overrides or []:
         if o.get("question") and _fuzzy(o["question"], question) >= 0.6:
             concepts = o.get("concepts")
@@ -30,11 +30,14 @@ def resolve_rubric(question, overrides):
                 concepts = [{"concept": question, "weight": o.get("max_marks", 5)}]
             return ({"max_marks": o.get("max_marks", 5),
                      "reference_answer": o.get("reference_answer", ""),
-                     "concepts": concepts}, "teacher")
+                     "concepts": concepts, "approval_status": "approved", "version": 1}, "teacher")
     r, _ = rubric_service.find_rubric(question)
     if r:
         return r, "library"
-    return rubric_service.suggest_concepts("", 5, question=question), "auto"
+    draft = rubric_service.suggest_concepts("", 5, question=question)
+    draft["approval_status"] = "draft"
+    draft["version"] = 1
+    return draft, "no_rubric"
 
 
 def run_evaluation_job(job_id, params):
@@ -92,10 +95,22 @@ def run_evaluation_job(job_id, params):
             jm.update(job_id, stage_index=5, progress=(i + 1) / n, message=f"Calculating marks — Q{i + 1}")
             s.update(g)
             s["rubric_source"] = source
-            if source == "auto":
+            s["rubric_status"] = "APPROVED_RUBRIC" if source in ("teacher", "library") else "NO_RUBRIC"
+            s["rubric_provenance"] = {"rubric_id": rubric.get("id"),
+                                       "rubric_version": rubric.get("version", 1),
+                                       "source": source,
+                                       "approval_status": rubric.get("approval_status", "approved")}
+            if source == "no_rubric":
+                g["ai_score"] = g["final_score"]
+                g["official_score"] = None
+                g["final_score"] = 0.0
+                g["review_required"] = True
                 s["issues"] = s["issues"] + [{"type": "no_rubric",
-                    "message": "No rubric found for this question — it was graded for relevance only. "
-                               "Please add a rubric in the Rubric Editor for concept-based marks."}]
+                    "message": "Teacher review required: no approved rubric exists, so the AI score is not an official grade."}]
+            else:
+                g["ai_score"] = g["final_score"]
+                g["official_score"] = g["final_score"]
+                g["review_required"] = bool(s.get("question_confidence", 1) < 0.6)
             s["sentiment"] = sentiment_service.analyze(s["student_answer"])
             results.append(s)
 
@@ -141,7 +156,7 @@ def run_evaluation_job(job_id, params):
                     db.flush()
                     db.add(ARow(question_row_id=qr.id, text=s["student_answer"],
                                 pages=",".join(map(str, s["answer_pages"]))))
-            ev = Evaluation(sheet_id=sheet_id, result_json="{}", total_score=total_score,
+            ev = Evaluation(sheet_id=sheet_id, user_id=params.get("user_id"), result_json="{}", total_score=total_score,
                             max_marks=max_total,
                             percentage=evaluation["summary"]["percentage"],
                             confidence=evaluation["summary"]["overall_confidence"],

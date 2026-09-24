@@ -17,6 +17,13 @@ def _f(key, default):
 class Settings:
     APP_NAME = "EduGrade AI"
     VERSION = "1.0.0"
+    AUTH_ENABLED = os.getenv("AUTH_ENABLED", "false").lower() == "true"
+    AUTH_ROLES = {"teacher", "admin", "student"}
+    MAX_UPLOAD_BYTES = int(os.getenv("MAX_UPLOAD_BYTES", str(25 * 1024 * 1024)))
+    MAX_PDF_PAGES = int(os.getenv("MAX_PDF_PAGES", "100"))
+    MAX_IMAGE_DIMENSION = int(os.getenv("MAX_IMAGE_DIMENSION", "12000"))
+    MAX_RAW_TEXT_LENGTH = int(os.getenv("MAX_RAW_TEXT_LENGTH", "200000"))
+    MAX_NAME_LENGTH = int(os.getenv("MAX_NAME_LENGTH", "200"))
 
     DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite:///{BASE_DIR / 'data' / 'edugrade.db'}")
     DATA_DIR = Path(os.getenv("DATA_DIR", BASE_DIR / "data"))
@@ -52,3 +59,20 @@ settings.DATA_DIR.mkdir(parents=True, exist_ok=True)
 settings.UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 settings.RUBRIC_DIR.mkdir(parents=True, exist_ok=True)
 settings.MODELS_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def validate_grading_settings():
+    weights = (settings.W_SEMANTIC, settings.W_KEYWORD, settings.W_CONTEXT)
+    if any(w < 0 for w in weights) or not abs(sum(weights) - 1.0) < 1e-6:
+        raise ValueError("W_SEMANTIC, W_KEYWORD and W_CONTEXT must be non-negative and sum to 1")
+    if not 0 <= settings.BLEND_RUBRIC_WEIGHT <= 1:
+        raise ValueError("BLEND_RUBRIC_WEIGHT must be between 0 and 1")
+    if not 0 <= settings.PARTIAL_THRESHOLD <= settings.MATCH_THRESHOLD <= 1:
+        raise ValueError("grading thresholds must satisfy 0 <= partial <= match <= 1")
+    if not 0 <= settings.AWARD_MIN_CONF < settings.AWARD_MAX_CONF <= 1:
+        raise ValueError("award thresholds must satisfy 0 <= min < max <= 1")
+    if not 0 <= settings.REF_SIM_FLOOR < settings.REF_SIM_CEIL <= 1:
+        raise ValueError("reference similarity thresholds must satisfy 0 <= floor < ceil <= 1")
+
+
+validate_grading_settings()

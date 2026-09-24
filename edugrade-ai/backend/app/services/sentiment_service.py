@@ -19,6 +19,7 @@ def analyze(text: str) -> dict[str, float | str]:
         except Exception as exc:
             logger.warning("Sentiment model unavailable; using lexicon fallback: %s", exc)
     words = tokens(text)
+    short_answer = len(words) < 5
     positive, negative = len(words & POSITIVE), len(words & NEGATIVE)
     total = positive + negative
     score = (positive - negative) / total if total else 0.0
@@ -28,10 +29,12 @@ def analyze(text: str) -> dict[str, float | str]:
         probabilities = {"positive": 0.7, "neutral": 0.2, "negative": 0.1}
     elif label == "negative":
         probabilities = {"positive": 0.1, "neutral": 0.2, "negative": 0.7}
+    confidence = 0.45 if short_answer else max(probabilities.values())
     return {"label": label, "score": round(score, 3), "positive": positive,
             "negative": negative, "probabilities": probabilities,
-            "confidence": max(probabilities.values()), "backend": "lexicon",
-            "indicators": {"uncertainty": 0.0, "frustration": round(negative / max(total, 1), 3),
+            "confidence": confidence, "backend": "lexicon", "fallback_used": True,
+            "uncertainty": round(1 - confidence, 3),
+            "indicators": {"uncertainty": round(1 - confidence, 3), "frustration": round(negative / max(total, 1), 3),
                            "engagement": min(1.0, len(words) / 40)},
             "disclaimer": DISCLAIMER}
 

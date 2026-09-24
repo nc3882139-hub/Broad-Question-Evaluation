@@ -51,9 +51,11 @@ function QuestionDetail({ q }) {
         <div className="space-y-3">
           <h4 className="text-xs font-medium text-slate-400">SCORES</h4>
           <div className="grid grid-cols-2 gap-3">
+            <Metric label="AI prediction" value={`${q.ai_score ?? q.final_score} / ${q.max_marks}`} />
+            <Metric label="Final teacher grade" value={q.official_score == null ? "Review required" : `${q.official_score} / ${q.max_marks}`} />
             <Metric label="Rubric score (Mode A)" value={`${q.rubric_score} / ${q.max_marks}`} />
             <Metric label="Reference (Mode B)" value={q.mode_b.score != null ? `${q.mode_b.score} · sim ${Math.round((q.mode_b.reference_similarity || 0) * 100)}%` : "n/a"} />
-            <Metric label="Final score" value={`${q.final_score} / ${q.max_marks}`} big />
+            <Metric label="Displayed score" value={`${q.final_score} / ${q.max_marks}`} big />
             <Metric label="Confidence" value={`${Math.round(q.confidence * 100)}%`} />
           </div>
           <h4 className="text-xs font-medium text-slate-400 pt-1">ANSWER QUALITY <span className="text-slate-500 font-normal">(shown separately — not merged into marks)</span></h4>
@@ -66,6 +68,7 @@ function QuestionDetail({ q }) {
               </div>))}
           {q.quality.possible_factual_inconsistency && (
             <Badge tone="rose"><AlertTriangle size={12} /> Possible factual inconsistency — review recommended</Badge>)}
+          {q.review_required && <Badge tone="amber"><AlertTriangle size={12} /> Teacher review required</Badge>}
         </div>
       </div>
       <div>
@@ -125,8 +128,10 @@ function QuestionCard({ q, open, onToggle }) {
             <Badge tone="slate">{q.percentage}%</Badge>
             <Badge tone={sentTone(q.sentiment.label)}>{q.sentiment.label}</Badge>
             <Badge tone="slate">{q.concepts_covered}/{q.concept_results.length} concepts</Badge>
+            {q.review_required && <Badge tone="amber">Review required</Badge>}
           </div>
           <p className="text-sm text-slate-200 truncate">{q.question}</p>
+          {q.rubric_provenance && <p className="text-xs text-slate-500 mt-1">Rubric {q.rubric_provenance.rubric_id || "unapproved"} · v{q.rubric_provenance.rubric_version} · {q.rubric_status}</p>}
         </div>
         {open ? <ChevronUp className="text-slate-400 shrink-0" /> : <ChevronDown className="text-slate-400 shrink-0" />}
       </button>

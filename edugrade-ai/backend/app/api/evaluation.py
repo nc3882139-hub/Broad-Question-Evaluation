@@ -10,6 +10,7 @@ from app.services import job_manager as jm
 from app.services import sentiment_service
 from app.services.pipeline import run_evaluation_job
 from app.services.seed_data import DEMO_RAW_TEXT
+from app.security import current_user, owns
 
 router = APIRouter(prefix="/api", tags=["evaluation"])
 
@@ -18,24 +19,25 @@ def _dump(model):
     return model.model_dump() if hasattr(model, "model_dump") else model.dict()
 
 
-def _start(params) -> dict:
+def _start(params, user) -> dict:
+    params["user_id"] = user["id"]
     job_id = jm.create_job()
     jm.submit(lambda jid: run_evaluation_job(jid, params), job_id)
     return {"job_id": job_id, "status": "started"}
 
 
 @router.post("/evaluate")
-def evaluate(req: EvaluateRequest):
+def evaluate(req: EvaluateRequest, user=Depends(current_user)):
     if not req.file_id and not (req.raw_text or "").strip():
         raise HTTPException(400, "Provide file_id (uploaded document) or raw_text.")
-    return _start(_dump(req))
+    return _start(_dump(req), user)
 
 
 @router.post("/demo/evaluate")
-def demo_evaluate():
+def demo_evaluate(user=Depends(current_user)):
     """Runs the seeded demo sheet: five APJ Abdul Kalam answers (excellent → irrelevant)."""
     return _start({"raw_text": DEMO_RAW_TEXT, "student_name": "Demo Student",
-                   "exam_name": "Demo — APJ Abdul Kalam (5 answer quality levels)"})
+                   "exam_name": "Demo — APJ Abdul Kalam (5 answer quality levels)"}, user)
 
 
 @router.get("/evaluate/status/{job_id}")
@@ -47,16 +49,19 @@ def evaluate_status(job_id: str):
 
 
 @router.get("/evaluation/{evaluation_id}")
-def get_evaluation(evaluation_id: int, db: Session = Depends(get_db)):
+def get_evaluation(evaluation_id: int, db: Session = Depends(get_db), user=Depends(current_user)):
     row = db.get(Evaluation, evaluation_id)
-    if not row:
+    if not row or not owns(row, user):
         raise HTTPException(404, "Evaluation not found")
     return json.loads(row.result_json)
 
 
 @router.get("/evaluations")
-def list_evaluations(db: Session = Depends(get_db)):
-    rows = db.query(Evaluation).order_by(Evaluation.created_at.desc()).limit(50).all()
+def list_evaluations(db: Session = Depends(get_db), user=Depends(current_user)):
+    query = db.query(Evaluation).order_by(Evaluation.created_at.desc())
+    if user["role"] != "admin":
+        query = query.filter((Evaluation.user_id == user["id"]) | (Evaluation.user_id.is_(None)))
+    rows = query.limit(50).all()
     out = []
     for r in rows:
         data = json.loads(r.result_json)
@@ -69,8 +74,11 @@ def list_evaluations(db: Session = Depends(get_db)):
 
 
 @router.get("/stats")
-def stats(db: Session = Depends(get_db)):
-    rows = db.query(Evaluation).order_by(Evaluation.created_at.desc()).limit(100).all()
+def stats(db: Session = Depends(get_db), user=Depends(current_user)):
+    query = db.query(Evaluation).order_by(Evaluation.created_at.desc())
+    if user["role"] != "admin":
+        query = query.filter((Evaluation.user_id == user["id"]) | (Evaluation.user_id.is_(None)))
+    rows = query.limit(100).all()
     qs = []
     for r in rows:
         qs.extend(json.loads(r.result_json).get("questions", []))
@@ -102,5 +110,5 @@ def stats(db: Session = Depends(get_db)):
 
 
 @router.post("/sentiment")
-def sentiment(req: SentimentIn):
+def sentiment(req: SentimentIn, user=Depends(current_user)):
     return sentiment_service.analyze(req.text)

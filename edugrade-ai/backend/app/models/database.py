@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from sqlalchemy import (JSON, Column, DateTime, Float, ForeignKey, Integer,
-                        String, Text, create_engine)
+                        String, Text, create_engine, inspect, text)
 from sqlalchemy.orm import declarative_base, sessionmaker
 
 from app.config import settings
@@ -17,6 +17,7 @@ class Student(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String(200), unique=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+    user_id = Column(String(128), index=True, nullable=True)
 
 
 class AnswerSheet(Base):
@@ -29,6 +30,7 @@ class AnswerSheet(Base):
     status = Column(String(40), default="uploaded")   # uploaded|parsed|evaluated
     text_mode = Column(Integer, default=0)            # 1 = PDF had a text layer
     created_at = Column(DateTime, default=datetime.utcnow)
+    user_id = Column(String(128), index=True, nullable=True)
 
 
 class Question(Base):
@@ -58,6 +60,8 @@ class Rubric(Base):
     source = Column(String(30), default="teacher")
     version = Column(Integer, default=1)
     created_at = Column(DateTime, default=datetime.utcnow)
+    user_id = Column(String(128), index=True, nullable=True)
+    approval_status = Column(String(20), default="approved")
 
 
 class Concept(Base):
@@ -80,6 +84,10 @@ class Evaluation(Base):
     confidence = Column(Float)
     processing_time = Column(Float)
     created_at = Column(DateTime, default=datetime.utcnow)
+    user_id = Column(String(128), index=True, nullable=True)
+    review_status = Column(String(30), default="review_required")
+    teacher_score = Column(Float, nullable=True)
+    locked = Column(Integer, default=0)
 
 
 class SentimentResult(Base):
@@ -102,6 +110,22 @@ class Report(Base):
 
 def init_db():
     Base.metadata.create_all(engine)
+    if not settings.DATABASE_URL.startswith("sqlite"):
+        return
+    additions = {
+        "students": {"user_id": "VARCHAR(128)"},
+        "answer_sheets": {"user_id": "VARCHAR(128)"},
+        "rubrics": {"user_id": "VARCHAR(128)", "approval_status": "VARCHAR(20)"},
+        "evaluations": {"user_id": "VARCHAR(128)", "review_status": "VARCHAR(30)",
+                        "teacher_score": "FLOAT", "locked": "INTEGER"},
+    }
+    with engine.begin() as connection:
+        tables = inspect(connection)
+        for table, columns in additions.items():
+            existing = {c["name"] for c in tables.get_columns(table)}
+            for name, sql_type in columns.items():
+                if name not in existing:
+                    connection.execute(text(f"ALTER TABLE {table} ADD COLUMN {name} {sql_type}"))
 
 
 def get_db():

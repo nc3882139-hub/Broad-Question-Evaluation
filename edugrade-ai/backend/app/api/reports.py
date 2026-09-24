@@ -5,14 +5,15 @@ from sqlalchemy.orm import Session
 
 from app.models.database import Evaluation, get_db
 from app.services import report_service
+from app.security import current_user, owns
 
 router = APIRouter(prefix="/api", tags=["reports"])
 
 
 @router.get("/report/{evaluation_id}")
-def report(evaluation_id: int, format: str = "json", db: Session = Depends(get_db)):
+def report(evaluation_id: int, format: str = "json", db: Session = Depends(get_db), user=Depends(current_user)):
     row = db.get(Evaluation, evaluation_id)
-    if not row:
+    if not row or not owns(row, user):
         raise HTTPException(404, "Evaluation not found")
     rep = report_service.build_report(json.loads(row.result_json))
     name = f"edugrade-report-{evaluation_id}"

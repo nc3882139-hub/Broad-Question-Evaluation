@@ -30,10 +30,12 @@ This lets the seeded demo run without downloading model files.
 - Uses a PDF text layer when available, with OCR fallback for scanned pages.
 - Detects numbered questions, multi-line questions, answer markers, and multi-page answers.
 - Resolves rubrics from teacher overrides, the rubric library, or an explicitly flagged draft.
+- Keeps missing or draft rubrics in `NO_RUBRIC` review-required state; only approved rubrics produce official marks.
 - Calculates explainable concept-level marks with evidence spans.
 - Shows rubric-based Mode A and reference-answer Mode B scores side by side.
 - Runs sentiment analysis separately so it never changes academic marks.
 - Persists evaluations in SQLite and exports JSON, CSV, PDF, or HTML reports.
+- Records rubric provenance, ownership, review state, and model/backend metadata for reproducibility.
 
 ## Architecture
 
@@ -49,6 +51,15 @@ PDF/image/text
     -> SQLite persistence
     -> React dashboard
 ```
+
+  ### Security model
+
+  Local development uses `AUTH_ENABLED=false`, explicitly reported by `/api/health`. When enabled,
+  requests must provide `X-User-ID` and one of the roles `teacher`, `admin`, or `student`. Evaluation
+  and report reads are owner-scoped; rubric management is teacher/admin-only and training is admin-only.
+  Uploaded files are size-limited, decoded before processing, checked against their declared type, and
+  stored under generated internal names. This lightweight header identity is suitable for a local demo,
+  not a production identity provider.
 
 ### Backend
 
@@ -239,6 +250,8 @@ Optional training scripts are in `training/`. The application does not require t
 - Auto-suggested rubrics are drafts and require teacher approval.
 - Contradiction detection is a lightweight heuristic, not fact-checking.
 - Transformer backends require locally available model files or network access on first load.
+- Fact and contradiction signals are heuristics and require teacher review; they are not guaranteed fact checking.
+- The current job queue is process-local and should be replaced with a durable worker for production deployment.
 
 ## Project Status
 

@@ -1,13 +1,15 @@
 import subprocess
 import sys
 import uuid
+import re
 from pathlib import Path
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from app.config import settings
+from app.security import require_roles
 
 router = APIRouter(prefix="/api", tags=["training"])
 _TRAIN = {}
@@ -22,7 +24,7 @@ class TrainIn(BaseModel):
 
 
 @router.post("/train")
-def train(payload: TrainIn):
+def train(payload: TrainIn, user=Depends(require_roles("admin"))):
     script = SCRIPTS.get(payload.task)
     if not script:
         raise HTTPException(400, "task must be 'self_supervised' or 'sentiment'")
@@ -33,6 +35,11 @@ def train(payload: TrainIn):
     job_id = uuid.uuid4().hex[:10]
     log_path = settings.MODELS_DIR / f"train_{job_id}.log"
     cmd = [sys.executable, str(path)]
+    if payload.base_model and (not re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", payload.base_model)
+                               or len(payload.base_model) > 200):
+        raise HTTPException(400, "base_model must be an allowlisted model identifier")
+    if any(info["process"].poll() is None for info in _TRAIN.values()):
+        raise HTTPException(409, "A training job is already running")
     if payload.base_model:
         cmd += ["--base-model", payload.base_model]
     log = open(log_path, "w")
@@ -43,7 +50,7 @@ def train(payload: TrainIn):
 
 
 @router.get("/train/status/{job_id}")
-def train_status(job_id: str):
+def train_status(job_id: str, user=Depends(require_roles("admin"))):
     job = _TRAIN.get(job_id)
     if not job:
         raise HTTPException(404, "Unknown training job")

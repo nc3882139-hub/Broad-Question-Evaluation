@@ -16,6 +16,9 @@ export const api = {
   demo: () => post("/demo/evaluate", {}),
   status: (id) => fetch(`${API}/evaluate/status/${id}`).then(j),
   evaluation: (id) => fetch(`${API}/evaluation/${id}`).then(j),
+  review: (id, body) => fetch(`${API}/evaluation/${id}/review`, {
+    method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+  }).then(j),
   evaluations: () => fetch(`${API}/evaluations`).then(j),
   stats: () => fetch(`${API}/stats`).then(j),
   rubrics: () => fetch(`${API}/rubrics`).then(j),

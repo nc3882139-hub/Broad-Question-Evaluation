@@ -29,3 +29,11 @@ class EvaluateRequest(BaseModel):
 
 class SentimentIn(BaseModel):
     text: str = Field(min_length=1, max_length=200000)
+
+
+class ReviewRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    teacher_score: Optional[float] = Field(default=None, ge=0, le=1000)
+    teacher_comment: str = Field(default="", max_length=10000)
+    reason: str = Field(default="", max_length=2000)
+    lock: bool = False

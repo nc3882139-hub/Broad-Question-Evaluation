@@ -56,6 +56,8 @@ def run_evaluation_job(job_id, params):
                 sheet = db.get(AnswerSheet, int(params["file_id"]))
                 if not sheet:
                     raise ValueError("Uploaded answer sheet not found — please upload again.")
+                if (params.get("user_role") != "admin" and sheet.user_id not in (None, params.get("user_id"))):
+                    raise ValueError("Uploaded answer sheet not found — please upload again.")
                 sheet_id = sheet.id
                 jm.update(job_id, stage_index=1, message=f"Parsing {sheet.filename} (OCR if needed)")
                 parsed = document_parser.parse_file(sheet.file_path, sheet.filename)

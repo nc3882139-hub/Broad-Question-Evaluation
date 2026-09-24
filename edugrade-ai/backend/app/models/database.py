@@ -108,6 +108,31 @@ class Report(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
 
+class AuditLog(Base):
+    __tablename__ = "audit_logs"
+    id = Column(Integer, primary_key=True)
+    evaluation_id = Column(Integer, ForeignKey("evaluations.id"), nullable=True, index=True)
+    user_id = Column(String(128), index=True)
+    action = Column(String(80))
+    details_json = Column(Text, default="{}")
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class Job(Base):
+    __tablename__ = "jobs"
+    job_id = Column(String(40), primary_key=True)
+    owner_id = Column(String(128), index=True, nullable=True)
+    kind = Column(String(40), default="evaluation")
+    status = Column(String(20), default="queued")
+    created_at = Column(DateTime, default=datetime.utcnow)
+    started_at = Column(DateTime, nullable=True)
+    completed_at = Column(DateTime, nullable=True)
+    progress = Column(Float, default=0.0)
+    current_stage = Column(String(200), default="")
+    error = Column(Text, nullable=True)
+    result_json = Column(Text, default="{}")
+
+
 def init_db():
     Base.metadata.create_all(engine)
     if not settings.DATABASE_URL.startswith("sqlite"):

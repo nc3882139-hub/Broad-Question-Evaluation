@@ -181,6 +181,7 @@ Copy `env.example` to `.env` to customize the application. Important settings in
 | `POST` | `/api/demo/evaluate` | Start the five-answer demo |
 | `GET` | `/api/evaluate/status/{job_id}` | Poll job progress |
 | `GET` | `/api/evaluation/{id}` | Retrieve a completed evaluation |
+| `PATCH` | `/api/evaluation/{id}/review` | Save or lock a teacher final grade |
 | `GET` | `/api/evaluations` | List recent evaluations |
 | `GET` | `/api/stats` | Dashboard aggregates |
 | `GET` | `/api/report/{id}?format=json\|csv\|pdf` | Export a report |
@@ -237,9 +238,37 @@ PYTHONPATH=backend EMBEDDING_BACKEND=hashing SENTIMENT_BACKEND=lexicon pytest -q
 Research evaluation scripts are available at:
 
 ```bash
-python evaluation/evaluate_grading.py
+python evaluation/evaluate_grading.py --dataset data/grading/grading.csv --ablation
 python evaluation/evaluate_sentiment.py
 ```
+
+The grading evaluator accepts CSV, JSON, and JSONL benchmark files. Required fields are
+`question_id`, `question`, `max_marks`, `student_answer`, and `human_teacher_mark`;
+the legacy `score` column is accepted as an input alias. Optional fields include
+`student_id`, `answer_group`, `teacher_feedback`, `teacher_1_mark`, `teacher_2_mark`,
+`teacher_3_mark`, `rubric`, `ai_mark`, `confidence`, and `review_required`.
+
+Each run writes `metrics.json`, `predictions.csv`, and `report.txt` to
+`evaluation/results/<run>/`. The metrics include MAE, RMSE, Pearson, Spearman, QWK,
+exact agreement, and agreement within 0.5 and 1.0 marks. The evaluator also records
+dataset counts, skipped rows, duplicate/near-duplicate checks, split metadata, and
+teacher-teacher agreement separately from AI agreement with the human reference.
+
+Splits are deterministic and group-aware. Records connected by the same question,
+student, or answer group remain in one partition; exact and near-duplicate answers
+are reported before results are interpreted. The demo CSV is intentionally tiny and
+is not a scientifically meaningful benchmark. Evaluation infrastructure is
+implemented, but scientifically meaningful performance results require a real
+human-graded benchmark dataset.
+
+The ablation runner compares the selectable keyword, semantic, and hybrid engine
+methods on identical rows. Rubric/evidence/factuality slots are emitted as
+`shared_engine_path` until those components can be independently enabled and
+disabled; they must not be interpreted as isolated component results.
+
+The reproducibility template is `evaluation/experiment_config.yaml`. Each experiment
+should record its dataset version, model/backend, configuration, seed, split strategy,
+and generated artifacts.
 
 Optional training scripts are in `training/`. The application does not require training to run.
 
@@ -251,7 +280,9 @@ Optional training scripts are in `training/`. The application does not require t
 - Contradiction detection is a lightweight heuristic, not fact-checking.
 - Transformer backends require locally available model files or network access on first load.
 - Fact and contradiction signals are heuristics and require teacher review; they are not guaranteed fact checking.
-- The current job queue is process-local and should be replaced with a durable worker for production deployment.
+- Job execution remains process-local, but job metadata and result references are persisted in SQLite; a durable multi-worker queue is still recommended for production deployment.
+- The current repository contains demonstration data, not a sufficiently large independently collected benchmark.
+- Metrics on the demonstration data must not be used as evidence of general grading accuracy.
 
 ## Project Status
 

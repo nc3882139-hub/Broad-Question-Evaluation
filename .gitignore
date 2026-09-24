@@ -7,3 +7,6 @@ edugrade-ai/data/raw/uploads/
 edugrade-ai/data/processed/
 edugrade-ai/models/*
 !edugrade-ai/models/.gitkeep
+edugrade-ai/evaluation/results/
+edugrade-ai/logs/
+edugrade-ai/frontend/dist/

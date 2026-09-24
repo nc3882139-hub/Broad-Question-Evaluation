@@ -142,13 +142,39 @@ function QuestionCard({ q, open, onToggle }) {
 export default function Results({ evaluationId, onNavigate }) {
   const [ev, setEv] = useState(null);
   const [open, setOpen] = useState(0);
+  const [teacherScore, setTeacherScore] = useState("");
+  const [reason, setReason] = useState("");
+  const [teacherComment, setTeacherComment] = useState("");
+  const [reviewError, setReviewError] = useState("");
+  const [savingReview, setSavingReview] = useState(false);
   useEffect(() => {
-    if (evaluationId) { setEv(null); api.evaluation(evaluationId).then(setEv).catch(() => {}); }
+    if (evaluationId) {
+      setEv(null); setReviewError("");
+      api.evaluation(evaluationId).then((value) => {
+        setEv(value);
+        setTeacherScore(value.teacher_final_score ?? value.summary?.total_score ?? "");
+        setTeacherComment(value.teacher_comment || "");
+      }).catch(() => {});
+    }
   }, [evaluationId]);
   if (!evaluationId)
     return <Card className="p-8 text-center text-slate-400">No evaluation selected. Run one from the <button className="text-violet-300 underline" onClick={() => onNavigate("evaluate")}>Evaluate</button> page.</Card>;
   if (!ev) return <p className="text-slate-400">Loading evaluation…</p>;
   const s = ev.summary;
+  const locked = ev.review_status === "locked";
+  const saveReview = async (lock) => {
+    setSavingReview(true); setReviewError("");
+    try {
+      const updated = await api.review(ev.evaluation_id, {
+        teacher_score: Number(teacherScore), reason, teacher_comment: teacherComment, lock,
+      });
+      setEv((current) => ({ ...current, ...updated, teacher_final_score: updated.teacher_final_score,
+        review_status: updated.review_status, summary: { ...current.summary, total_score: updated.teacher_final_score,
+          teacher_final_score: updated.teacher_final_score,
+          percentage: updated.teacher_final_score / current.summary.max_marks * 100 } }));
+    } catch (error) { setReviewError(error.message); }
+    finally { setSavingReview(false); }
+  };
   return (
     <div className="space-y-5">
       <Card className="p-6">
@@ -172,6 +198,36 @@ export default function Results({ evaluationId, onNavigate }) {
           <Metric label="Overall confidence" value={`${Math.round(s.overall_confidence * 100)}%`} />
           <Metric label="Processing time" value={`${ev.processing.time_seconds}s`} />
         </div>
+      </Card>
+      <Card className="p-5 border-violet-400/20">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-sm font-semibold text-white">Teacher review</h2>
+            <p className="text-xs text-slate-400 mt-1">AI prediction remains separate from the final teacher grade.</p>
+          </div>
+          <Badge tone={locked ? "green" : "amber"}>{locked ? "Locked final grade" : (ev.review_status || "Review required")}</Badge>
+        </div>
+        <div className="grid md:grid-cols-3 gap-3 mt-4">
+          <label className="text-xs text-slate-400">Final teacher score
+            <input disabled={locked} type="number" min="0" max={s.max_marks} step="0.01" value={teacherScore}
+              onChange={(event) => setTeacherScore(event.target.value)}
+              className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white" />
+          </label>
+          <label className="text-xs text-slate-400">Reason for change
+            <input disabled={locked} value={reason} onChange={(event) => setReason(event.target.value)}
+              placeholder="Required when changing the AI score"
+              className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white" />
+          </label>
+          <label className="text-xs text-slate-400">Teacher comment
+            <input disabled={locked} value={teacherComment} onChange={(event) => setTeacherComment(event.target.value)}
+              className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white" />
+          </label>
+        </div>
+        {reviewError && <p className="text-xs text-rose-300 mt-3">{reviewError}</p>}
+        {!locked && <div className="flex flex-wrap gap-2 mt-4">
+          <Button size="sm" variant="outline" disabled={savingReview} onClick={() => saveReview(false)}>Save review</Button>
+          <Button size="sm" disabled={savingReview} onClick={() => saveReview(true)}>Save and lock final grade</Button>
+        </div>}
       </Card>
       {ev.questions.map((q, i) => (
         <QuestionCard key={i} q={q} open={open === i} onToggle={() => setOpen(open === i ? -1 : i)} />))}

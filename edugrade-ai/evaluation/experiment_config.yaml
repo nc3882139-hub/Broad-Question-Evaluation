@@ -1,0 +1,12 @@
+dataset: data/grading/grading.csv
+model:
+  embedding_backend: hashing
+  embedding_model: configured-local-backend
+rubric: approved-library
+semantic_weight: 0.70
+keyword_weight: 0.20
+evidence_weight: 0.10
+factual_weight: 0.00
+random_seed: 42
+split_strategy: grouped
+test_size: 0.20

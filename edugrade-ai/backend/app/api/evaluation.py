@@ -4,8 +4,8 @@ from collections import Counter
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from app.models.database import Evaluation, get_db
-from app.models.schemas import EvaluateRequest, SentimentIn
+from app.models.database import AuditLog, Evaluation, get_db
+from app.models.schemas import EvaluateRequest, ReviewRequest, SentimentIn
 from app.services import job_manager as jm
 from app.services import sentiment_service
 from app.services.pipeline import run_evaluation_job
@@ -21,7 +21,8 @@ def _dump(model):
 
 def _start(params, user) -> dict:
     params["user_id"] = user["id"]
-    job_id = jm.create_job()
+    params["user_role"] = user["role"]
+    job_id = jm.create_job(owner_id=user["id"])
     jm.submit(lambda jid: run_evaluation_job(jid, params), job_id)
     return {"job_id": job_id, "status": "started"}
 
@@ -41,8 +42,8 @@ def demo_evaluate(user=Depends(current_user)):
 
 
 @router.get("/evaluate/status/{job_id}")
-def evaluate_status(job_id: str):
-    job = jm.get(job_id)
+def evaluate_status(job_id: str, user=Depends(current_user)):
+    job = jm.get(job_id, owner_id=user["id"], is_admin=user["role"] == "admin")
     if not job:
         raise HTTPException(404, "Unknown job id")
     return job
@@ -54,6 +55,48 @@ def get_evaluation(evaluation_id: int, db: Session = Depends(get_db), user=Depen
     if not row or not owns(row, user):
         raise HTTPException(404, "Evaluation not found")
     return json.loads(row.result_json)
+
+
+@router.patch("/evaluation/{evaluation_id}/review")
+def review_evaluation(evaluation_id: int, req: ReviewRequest,
+                      db: Session = Depends(get_db), user=Depends(current_user)):
+    if user["role"] not in ("teacher", "admin"):
+        raise HTTPException(403, "Teacher or admin role required")
+    row = db.get(Evaluation, evaluation_id)
+    if not row or not owns(row, user):
+        raise HTTPException(404, "Evaluation not found")
+    if row.locked:
+        raise HTTPException(409, "Evaluation is locked")
+    result = json.loads(row.result_json or "{}")
+    original = float(result.get("summary", {}).get("total_score", row.total_score or 0))
+    score = original if req.teacher_score is None else float(req.teacher_score)
+    if score > float(row.max_marks or 0):
+        raise HTTPException(422, "teacher_score cannot exceed max_marks")
+    changed = abs(score - original) > 1e-9
+    if changed and not req.reason.strip():
+        raise HTTPException(422, "reason is required when changing the AI score")
+    result["ai_score"] = original
+    result["teacher_final_score"] = score
+    result["final_score"] = score
+    result["review_status"] = "locked" if req.lock else ("modified" if changed else "accepted")
+    result["teacher_comment"] = req.teacher_comment
+    result["review_required"] = False
+    result.setdefault("summary", {})["teacher_final_score"] = score
+    result["summary"]["total_score"] = score
+    result["summary"]["percentage"] = round(score / row.max_marks * 100, 1) if row.max_marks else 0
+    row.teacher_score = score
+    row.review_status = result["review_status"]
+    row.locked = 1 if req.lock else 0
+    row.total_score = score
+    row.percentage = result["summary"]["percentage"]
+    row.result_json = json.dumps(result, default=str)
+    db.add(AuditLog(evaluation_id=row.id, user_id=user["id"], action="review_locked" if req.lock else "reviewed",
+                    details_json=json.dumps({"original_ai_score": original, "final_teacher_score": score,
+                                             "changed": changed, "reason": req.reason,
+                                             "teacher_comment": req.teacher_comment})))
+    db.commit()
+    return {"evaluation_id": row.id, "ai_score": original, "teacher_final_score": score,
+            "review_status": row.review_status, "locked": bool(row.locked)}
 
 
 @router.get("/evaluations")
